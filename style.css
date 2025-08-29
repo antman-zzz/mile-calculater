@@ -47,6 +47,10 @@ button:hover {
 }
 
 #airport-list {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     margin-top: 20px;
 }
 
@@ -55,4 +59,44 @@ button:hover {
     width: 100%;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Airport List Styles */
+.region-summary {
+    font-weight: bold;
+    cursor: pointer;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    outline: none; /* フォーカス時のアウトラインを消す */
+}
+
+.region-details[open] > .region-summary {
+    background-color: #e0e0e0;
+}
+
+.country-list {
+    list-style-type: none;
+    padding-left: 20px;
+    margin-top: 10px;
+}
+
+.country-list li {
+    margin-bottom: 8px;
+}
+
+.airport-code {
+    cursor: pointer;
+    color: #007bff;
+    text-decoration: underline;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.airport-code:hover {
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
 }

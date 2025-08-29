@@ -24,21 +24,65 @@ document.addEventListener('DOMContentLoaded', () => {
             displayAirportList(airports);
         });
 
-    // 国別の空港リストを表示
+    // 国と地域のマッピング
+    const countryToRegion = {
+        'Japan': 'アジア',
+        'United States': '北米',
+        'United Kingdom': 'ヨーロッパ',
+        'France': 'ヨーロッパ',
+        'Singapore': 'アジア',
+        'Australia': 'オセアニア'
+    };
+
+    // 地域 > 国 > 空港 の階層でデータをグループ化し、リストを表示
     function displayAirportList(airports) {
-        const groupedByCountry = airports.reduce((acc, airport) => {
-            acc[airport.country] = acc[airport.country] || [];
-            acc[airport.country].push(airport.iata);
+        const regions = airports.reduce((acc, airport) => {
+            const region = countryToRegion[airport.country] || 'その他';
+            if (!acc[region]) {
+                acc[region] = {};
+            }
+            if (!acc[region][airport.country]) {
+                acc[region][airport.country] = [];
+            }
+            // 重複を避けてIATAコードを追加
+            if (!acc[region][airport.country].includes(airport.iata)) {
+                acc[region][airport.country].push(airport.iata);
+            }
             return acc;
         }, {});
 
-        let html = '<ul>';
-        for (const country in groupedByCountry) {
-            html += `<li><strong>${country}:</strong> ${groupedByCountry[country].join(', ')}</li>`;
+        let html = '';
+        for (const region in Object.keys(regions).sort()) { // 地域名をソート
+            const regionName = Object.keys(regions).sort()[region];
+            html += `<details class="region-details">`;
+            html += `<summary class="region-summary">${regionName}</summary>`;
+            html += '<ul class="country-list">';
+            for (const country in regions[regionName]) {
+                const iataCodes = regions[regionName][country]
+                    .map(iata => `<span class="airport-code">${iata}</span>`)
+                    .join(', ');
+                html += `<li>${country}（${iataCodes}）</li>`;
+            }
+            html += '</ul>';
+            html += `</details>`;
         }
-        html += '</ul>';
-        airportListEl.innerHTML = html;
+        // airport-list の h2 タグの後に内容を追加
+        airportListEl.querySelector('h2').insertAdjacentHTML('afterend', html);
     }
+
+    // 空港コードクリックで入力欄に自動入力
+    airportListEl.addEventListener('click', (e) => {
+        if (e.target.classList.contains('airport-code')) {
+            const code = e.target.textContent;
+            if (airportAInput.value === '') {
+                airportAInput.value = code;
+            } else if (airportBInput.value === '') {
+                airportBInput.value = code;
+            } else {
+                airportBInput.value = code; // 両方埋まっている場合はBを上書き
+            }
+        }
+    });
 
     // ハバーサイン公式による距離計算
     function haversineDistance(coords1, coords2) {
