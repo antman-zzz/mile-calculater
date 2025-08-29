@@ -10,24 +10,21 @@
 <body>
     <h1>空港間マイル計算機</h1>
 
-    <div class="container">
-        <div class="input-section">
-            <h2>空港を選択</h2>
-            <div class="airport-inputs">
-                <input type="text" id="airportA" placeholder="空港A (例: HND)">
-                <input type="text" id="airportB" placeholder="空港B (例: JFK)">
-                <button id="calculate">計算</button>
-            </div>
-            </div>
-
-        <div class="result-section">
-            <h2>計算結果</h2>
-            <p id="distance">距離: --- miles</p>
-            <div class="percentage-calculator">
-                <input type="number" id="percentage" placeholder="50">%
-                <button id="calculate-percentage">計算</button>
-                <p id="percentage-result">結果: --- miles</p>
-            </div>
+    <div id="floating-panel">
+        <div class="airport-inputs">
+            <label>空港:</label>
+            <input type="text" id="airportA" placeholder="出発地 (HND)">
+            <input type="text" id="airportB" placeholder="到着地 (JFK)">
+            <button id="calculate">距離計算</button>
+        </div>
+        <div class="distance-result">
+             <p id="distance">距離: --- miles</p>
+        </div>
+        <div class="percentage-calculator">
+            <label>割合:</label>
+            <input type="number" id="percentage" placeholder="50">%
+            <button id="calculate-percentage">マイル計算</button>
+            <p id="percentage-result">結果: --- miles</p>
         </div>
     </div>
 
