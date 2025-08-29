@@ -136,3 +136,32 @@ button:hover {
     color: white;
     text-decoration: none;
 }
+
+#floating-result {
+    display: none; /* Initially hidden */
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 1001;
+    backdrop-filter: blur(5px);
+    max-width: 300px;
+    font-size: 0.95em;
+}
+
+#floating-result p {
+    margin: 0;
+    padding: 0;
+    line-height: 1.4;
+}
+
+#floating-result .airports {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+
+/* Responsive Design */

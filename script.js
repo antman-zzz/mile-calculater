@@ -177,6 +177,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 地図の更新
             updateMap(airportA, airportB);
+
+            // フローティング結果の更新
+            const floatingResultEl = document.getElementById('floating-result');
+            floatingResultEl.innerHTML = `
+                <p class="airports">${airportA.code} - ${airportB.code}</p>
+                <p>距離: ${distance.toFixed(2)} miles</p>
+            `;
+            floatingResultEl.style.display = 'block';
+
         } else {
             alert('有効な空港コードを2つ入力してください。');
         }
