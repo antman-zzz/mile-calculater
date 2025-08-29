@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マイル計算機</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>空港間マイル計算機</h1>
+
+    <div class="container">
+        <div class="input-section">
+            <h2>空港を選択</h2>
+            <div class="airport-inputs">
+                <input type="text" id="airportA" placeholder="空港A (例: HND)">
+                <input type="text" id="airportB" placeholder="空港B (例: JFK)">
+                <button id="calculate">計算</button>
+            </div>
+            <div id="airport-list"></div>
+        </div>
+
+        <div class="result-section">
+            <h2>計算結果</h2>
+            <p id="distance">距離: --- miles</p>
+            <div class="percentage-calculator">
+                <input type="number" id="percentage" placeholder="50">%
+                <button id="calculate-percentage">計算</button>
+                <p id="percentage-result">結果: --- miles</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="script.js"></script>
+</body>
+</html>
