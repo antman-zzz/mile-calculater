@@ -20,18 +20,78 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch('airports.json')
         .then(response => response.json())
         .then(data => {
-            airports = data;
+            airports = data.filter(airport => airport.code && airport.type !== 'closed'); // 空港コードがあり、閉鎖されていないもののみ
             displayAirportList(airports);
         });
 
-    // 国と地域のマッピング
+    // 国と地域のマッピング（大幅拡張）
     const countryToRegion = {
+        // アジア
         'Japan': 'アジア',
-        'United States': '北米',
+        'China': 'アジア',
+        'South Korea': 'アジア',
+        'India': 'アジア',
+        'Singapore': 'アジア',
+        'Thailand': 'アジア',
+        'Vietnam': 'アジア',
+        'Malaysia': 'アジア',
+        'Indonesia': 'アジア',
+        'Philippines': 'アジア',
+        'United Arab Emirates': 'アジア',
+        'Qatar': 'アジア',
+        'Saudi Arabia': 'アジア',
+        'Turkey': 'アジア',
+        'Hong Kong': 'アジア',
+        'Taiwan': 'アジア',
+        'Israel': 'アジア',
+        // ヨーロッパ
         'United Kingdom': 'ヨーロッパ',
         'France': 'ヨーロッパ',
-        'Singapore': 'アジア',
-        'Australia': 'オセアニア'
+        'Germany': 'ヨーロッパ',
+        'Spain': 'ヨーロッパ',
+        'Italy': 'ヨーロッパ',
+        'Netherlands': 'ヨーロッパ',
+        'Switzerland': 'ヨーロッパ',
+        'Russia': 'ヨーロッパ',
+        'Sweden': 'ヨーロッパ',
+        'Norway': 'ヨーロッパ',
+        'Denmark': 'ヨーロッパ',
+        'Finland': 'ヨーロッパ',
+        'Greece': 'ヨーロッパ',
+        'Portugal': 'ヨーロッパ',
+        'Austria': 'ヨーロッパ',
+        'Belgium': 'ヨーロッパ',
+        'Ireland': 'ヨーロッパ',
+        'Poland': 'ヨーロッパ',
+        'Czech Republic': 'ヨーロッパ',
+        // 北米
+        'United States': '北米',
+        'Canada': '北米',
+        'Mexico': '北米',
+        // 南米
+        'Brazil': '南米',
+        'Argentina': '南米',
+        'Colombia': '南米',
+        'Chile': '南米',
+        'Peru': '南米',
+        'Venezuela': '南米',
+        'Ecuador': '南米',
+        // オセアニア
+        'Australia': 'オセアニア',
+        'New Zealand': 'オセアニア',
+        'Fiji': 'オセアニア',
+        'French Polynesia': 'オセアニア',
+        'Papua New Guinea': 'オセアニア',
+        // アフリカ
+        'South Africa': 'アフリカ',
+        'Egypt': 'アフリカ',
+        'Nigeria': 'アフリカ',
+        'Ethiopia': 'アフリカ',
+        'Kenya': 'アフリカ',
+        'Morocco': 'アフリカ',
+        'Algeria': 'アフリカ',
+        'Ghana': 'アフリカ',
+        'Tanzania': 'アフリカ'
     };
 
     // 地域 > 国 > 空港 の階層でデータをグループ化し、リストを表示
@@ -44,30 +104,32 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!acc[region][airport.country]) {
                 acc[region][airport.country] = [];
             }
-            // 重複を避けてIATAコードを追加
-            if (!acc[region][airport.country].includes(airport.iata)) {
-                acc[region][airport.country].push(airport.iata);
+            // 重複を避けてコードを追加
+            if (!acc[region][airport.country].includes(airport.code)) {
+                acc[region][airport.country].push(airport.code);
             }
             return acc;
         }, {});
 
         let html = '';
-        for (const region in Object.keys(regions).sort()) { // 地域名をソート
-            const regionName = Object.keys(regions).sort()[region];
+        const sortedRegions = Object.keys(regions).sort();
+        for (const regionName of sortedRegions) {
             html += `<details class="region-details">`;
             html += `<summary class="region-summary">${regionName}</summary>`;
             html += '<ul class="country-list">';
-            for (const country in regions[regionName]) {
-                const iataCodes = regions[regionName][country]
-                    .map(iata => `<span class="airport-code">${iata}</span>`)
+            const sortedCountries = Object.keys(regions[regionName]).sort();
+            for (const country of sortedCountries) {
+                const airportCodes = regions[regionName][country]
+                    .map(code => `<span class="airport-code">${code}</span>`)
                     .join(', ');
-                html += `<li>${country}（${iataCodes}）</li>`;
+                html += `<li>${country}（${airportCodes}）</li>`;
             }
             html += '</ul>';
             html += `</details>`;
         }
         // airport-list の h2 タグの後に内容を追加
-        airportListEl.querySelector('h2').insertAdjacentHTML('afterend', html);
+        const h2 = airportListEl.querySelector('h2');
+        if(h2) h2.insertAdjacentHTML('afterend', html);
     }
 
     // 空港コードクリックで入力欄に自動入力
@@ -102,11 +164,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 計算ボタンのイベントリスナー
     calculateBtn.addEventListener('click', () => {
-        const iataA = airportAInput.value.toUpperCase();
-        const iataB = airportBInput.value.toUpperCase();
+        const codeA = airportAInput.value.toUpperCase();
+        const codeB = airportBInput.value.toUpperCase();
 
-        const airportA = airports.find(a => a.iata === iataA);
-        const airportB = airports.find(a => a.iata === iataB);
+        const airportA = airports.find(a => a.code === codeA);
+        const airportB = airports.find(a => a.code === codeB);
 
         if (airportA && airportB) {
             const distance = haversineDistance(airportA, airportB);
@@ -146,8 +208,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const polyline = L.polyline(latlngs, { color: 'blue' });
         const markers = L.layerGroup([
-            L.marker(latlngs[0]).bindPopup(`${airportA.iata}<br>${airportA.name}`),
-            L.marker(latlngs[1]).bindPopup(`${airportB.iata}<br>${airportB.name}`)
+            L.marker(latlngs[0]).bindPopup(`${airportA.code}<br>${airportA.name}`),
+            L.marker(latlngs[1]).bindPopup(`${airportB.code}<br>${airportB.name}`)
         ]);
 
         routeLayer = L.layerGroup([polyline, markers]).addTo(map);
