@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>空港間マイル計算</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        body { font-family: sans-serif; margin: 0; padding-top: 80px; } /* Added padding-top for floating header */
+        h1, h2 { color: #333; }
+        #main-container { max-width: 1000px; margin: 0 auto; }
+        .section { border: 1px solid #ccc; padding: 1em; margin-bottom: 1em; border-radius: 5px; }
+        
+        /* Interactive row styles */
+        #interactive-section {
+            display: flex;
+            align-items: center;
+            gap: 0.5em; /* Smaller gap for inline elements */
+            flex-wrap: wrap; /* Allow wrapping if screen is too small */
+            transition: background-color 0.3s;
+            font-size: 1.2em; /* Make text larger */
+            font-weight: bold;
+            
+            /* Floating styles */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #fff; /* Ensure it covers content below */
+            z-index: 1000; /* Ensure it stays on top */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Optional: subtle shadow */
+            padding: 1em; /* Restore padding */
+        }
+        #interactive-section:hover {
+            background-color: #f0f8ff; /* AliceBlue */
+        }
+        #interactive-section select {
+            width: 150px; /* Adjust width for selects */
+            font-size: 1em;
+            font-weight: normal;
+        }
+        #interactive-section input[type="number"] {
+            width: 60px;
+            text-align: right;
+            font-size: 1em;
+            font-weight: normal;
+        }
+        #base-mileage-display, #final-mileage-display {
+            color: #0056b3;
+        }
+        #percentage-input {
+            color: #dc3545; /* Red for percentage input */
+        }
+
+        #map { height: 400px; background-color: #f0f0f0; }
+        
+        /* Accordion styles */
+        #airport-list { max-height: 400px; overflow-y: auto; border: 1px solid #eee; padding: 0; }
+        details { border-bottom: 1px solid #ddd; }
+        summary { padding: 0.5em; cursor: pointer; font-weight: bold; }
+        summary:hover { background-color: #f4f4f4; }
+        .country-details summary { padding-left: 2em; font-weight: normal; }
+        .airport-item { padding: 0.5em 0.5em 0.5em 4em; cursor: pointer; }
+        .airport-item:hover { background-color: #e9ecef; }
+
+        /* Search input style */
+        #airport-search-input {
+            width: 100%;
+            padding: 0.5em;
+            margin-bottom: 1em;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; /* Include padding and border in the element's total width and height */
+        }
+    </style>
+</head>
+<body>
+    <div id="main-container">
+        <h1>空港間マイル計算</h1>
+
+        <div id="interactive-section" class="section">
+            <select id="departure" name="departure" onchange="calculateMiles()"></select>
+            -
+            <select id="arrival" name="arrival" onchange="calculateMiles()"></select>
+            =
+            <span id="base-mileage-display">ー</span> マイル
+            ×
+            <input type="number" id="percentage-input" value="100" min="0" onchange="calculateMiles()"> %
+            =
+            <span id="final-mileage-display">ー</span> マイル
+        </div>
+
+        <div id="map-section" class="section">
+            <h2>世界地図</h2>
+            <div id="map"></div>
+        </div>
+
+        <div id="airport-list-section" class="section">
+            <h2>空港リスト</h2>
+            <input type="text" id="airport-search-input" placeholder="空港を検索...">
+            <div id="airport-list">
+                <p style="padding: 0.5em;">空港データを読み込んでいます...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="airports.js"></script>
+    <script>
+        let groupedAirports = {};
+        let allAirports = []; // Store all airports for filtering
+        const map = L.map('map', {minZoom: 2}).setView([20, 0], 2);
+        const routeLayer = L.layerGroup().addTo(map);
+        let lastSelectedField = 'arrival';
+
+        const capitalAirports = new Set([
+            "HND", "NRT", "IAD", "DCA", "LHR", "CDG", "BER", "FCO", "PEK", "PKX", "DEL", "YOW", "CBR", "SVO", "DME", "VKO", "BSB", "JNB", "CPT", "MEX", "ICN", "GMP", "BKK", "ABV", "ADD", "AUH", "AMM", "CAI", "IST", "ATH", "HEL", "CPH", "OSL", "ARN", "WAW", "PRG", "BUD", "VIE", "BRU", "AMS", "LIS", "MAD", "DUB", "DOH", "KWI", "BAH", "DXB", "MLE", "KTM", "DAC", "RGN", "HAN", "SGN", "KUL", "HKG", "TPE", "MNL", "HAV", "SCL", "EZE", "LIM", "BOG", "SAN", "TLL", "RIX", "VNO", "SJJ", "SKP", "TIA", "BTS", "LJU", "ZAG", "POD", "TUN", "ALG", "RBA", "DAR", "NBO", "LOS", "ACC", "DKR", "CMN", "EVN", "TBS", "MSQ", "SOF", "BEL", "TLV", "BOM", "ISB", "TAS", "ULA", "ULN"
+        ]);
+
+        const airportListEl = document.getElementById('airport-list');
+        const departureSelect = document.getElementById('departure');
+        const arrivalSelect = document.getElementById('arrival');
+        const airportSearchInput = document.getElementById('airport-search-input');
+
+        window.onload = function() {
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            if (typeof airports === 'undefined' || airports.length === 0) {
+                console.error('空港データが読み込めませんでした。');
+                airportListEl.innerHTML = '<p style="padding: 0.5em; color: red;">空港データの読み込みに失敗しました。airports.jsを確認してください。</p>';
+                return;
+            }
+
+            allAirports = airports; // Store all airports
+            initializeApp();
+        };
+
+        function initializeApp() {
+            airports.sort((a, b) => a.city.localeCompare(b.city));
+            const options = airports.map(ap => `<option value="${ap.iata}">${ap.city} (${ap.iata})</option>`).join('');
+            
+            departureSelect.innerHTML = `<option value="" disabled selected>出発空港</option>` + options;
+            arrivalSelect.innerHTML = `<option value="" disabled selected>到着空港</option>` + options;
+
+            groupedAirports = airports.reduce((acc, airport) => {
+                const { continent, country } = airport;
+                if (!acc[continent]) acc[continent] = {};
+                if (!acc[continent][country]) acc[continent][country] = [];
+                acc[continent][country].push(airport);
+                return acc;
+            }, {});
+
+            renderAccordionList(allAirports, ''); // Render all airports initially, closed
+            addAirportMarkersToMap();
+            calculateMiles(); // Initial calculation
+        }
+
+        function addAirportMarkersToMap() {
+            const defaultMarkerOptions = { radius: 2, fillColor: "#808080", color: "#808080", weight: 1, opacity: 1, fillOpacity: 0.8 };
+            const capitalMarkerOptions = { radius: 3, fillColor: "#000000", color: "#000000", weight: 1, opacity: 1, fillOpacity: 1 };
+
+            airports.forEach(airport => {
+                if (airport.lat && airport.lon) {
+                    const isCapital = capitalAirports.has(airport.iata);
+                    const markerOptions = isCapital ? capitalMarkerOptions : defaultMarkerOptions;
+
+                    const marker = L.circleMarker([airport.lat, airport.lon], markerOptions)
+                        .bindTooltip(`${airport.city} (${airport.iata})`)
+                        .on('click', () => {
+                            const iata = airport.iata;
+                            if (!departureSelect.value) {
+                                departureSelect.value = iata;
+                                lastSelectedField = 'departure';
+                            } else if (!arrivalSelect.value) {
+                                arrivalSelect.value = iata;
+                                lastSelectedField = 'arrival';
+                            } else {
+                                if (lastSelectedField === 'arrival') {
+                                    departureSelect.value = iata;
+                                    lastSelectedField = 'departure';
+                                } else {
+                                    arrivalSelect.value = iata;
+                                    lastSelectedField = 'arrival';
+                                }
+                            }
+                            calculateMiles();
+                        });
+                    marker.addTo(map);
+                }
+            });
+        }
+
+        function renderAccordionList(airportsToRender, searchTerm = '') {
+            airportListEl.innerHTML = '';
+            const groupedFilteredAirports = airportsToRender.reduce((acc, airport) => {
+                const { continent, country } = airport;
+                if (!acc[continent]) acc[continent] = {};
+                if (!acc[continent][country]) acc[continent][country] = [];
+                acc[continent][country].push(airport);
+                return acc;
+            }, {});
+
+            const continents = Object.keys(groupedFilteredAirports).sort();
+
+            for (const continent of continents) {
+                const continentDetails = document.createElement('details');
+                const continentSummary = document.createElement('summary');
+                continentSummary.textContent = continent;
+                continentDetails.appendChild(continentSummary);
+
+                const countries = Object.keys(groupedFilteredAirports[continent]).sort();
+                for (const country of countries) {
+                    const countryDetails = document.createElement('details');
+                    countryDetails.className = 'country-details';
+                    const countrySummary = document.createElement('summary');
+                    countrySummary.textContent = country;
+                    countryDetails.appendChild(countrySummary);
+
+                    const airportsInCountry = groupedFilteredAirports[continent][country];
+                    for (const airport of airportsInCountry) {
+                        const airportDiv = document.createElement('div');
+                        airportDiv.className = 'airport-item';
+                        airportDiv.textContent = `${airport.city} (${airport.iata})`;
+                        airportDiv.dataset.iata = airport.iata;
+                        countryDetails.appendChild(airportDiv);
+                    }
+                    continentDetails.appendChild(countryDetails);
+
+                    // Open country details if there's a search term
+                    if (searchTerm) {
+                        countryDetails.open = true;
+                    }
+                }
+                airportListEl.appendChild(continentDetails);
+
+                // Open continent details if there's a search term
+                if (searchTerm) {
+                    continentDetails.open = true;
+                }
+            }
+        }
+
+        airportListEl.addEventListener('click', function(e) {
+            if (e.target && e.target.matches('.airport-item')) {
+                const iata = e.target.dataset.iata;
+                if (!departureSelect.value) {
+                    departureSelect.value = iata;
+                    lastSelectedField = 'departure';
+                } else if (!arrivalSelect.value) {
+                    arrivalSelect.value = iata;
+                    lastSelectedField = 'arrival';
+                } else {
+                    if (lastSelectedField === 'arrival') {
+                        departureSelect.value = iata;
+                        lastSelectedField = 'departure';
+                    }
+                    else {
+                        arrivalSelect.value = iata;
+                        lastSelectedField = 'arrival';
+                    }
+                }
+                calculateMiles(); // Recalculate on airport selection
+            }
+        });
+
+        // New search functionality
+        airportSearchInput.addEventListener('input', function() {
+            const searchTerm = airportSearchInput.value.toLowerCase();
+            if (searchTerm) {
+                const filteredAirports = allAirports.filter(airport => {
+                    return (
+                        airport.name.toLowerCase().includes(searchTerm) ||
+                        airport.city.toLowerCase().includes(searchTerm) ||
+                        airport.iata.toLowerCase().includes(searchTerm) ||
+                        airport.country.toLowerCase().includes(searchTerm) ||
+                        airport.continent.toLowerCase().includes(searchTerm) // Search by continent as well
+                    );
+                });
+                renderAccordionList(filteredAirports, searchTerm); // Pass searchTerm
+            } else {
+                renderAccordionList(allAirports, ''); // Render all, keep closed
+            }
+        });
+
+        function getDistanceInMiles(lat1, lon1, lat2, lon2) {
+            const R = 6371; // km
+            const toRad = (deg) => deg * (Math.PI / 180);
+            const dLat = toRad(lat2 - lat1);
+            const dLon = toRad(lon2 - lon1);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return (R * c) * 0.621371; // to miles
+        }
+
+        function calculateMiles() {
+            const departureSelect = document.getElementById('departure');
+            const arrivalSelect = document.getElementById('arrival');
+            const percentageInput = document.getElementById('percentage-input');
+            
+            const baseMileageDisplay = document.getElementById('base-mileage-display');
+            const finalMileageDisplay = document.getElementById('final-mileage-display');
+
+            const percentage = parseFloat(percentageInput.value) || 100;
+
+            const departureAirport = airports.find(a => a.iata === departureSelect.value);
+            const arrivalAirport = airports.find(a => a.iata === arrivalSelect.value);
+
+            if (departureAirport && arrivalAirport) {
+                if (departureSelect.value === arrivalSelect.value) {
+                    baseMileageDisplay.textContent = 'ー';
+                    finalMileageDisplay.textContent = 'ー';
+                    routeLayer.clearLayers();
+                    return;
+                }
+
+                const baseDistance = getDistanceInMiles(departureAirport.lat, departureAirport.lon, arrivalAirport.lat, arrivalAirport.lon);
+                const finalDistance = baseDistance * (percentage / 100);
+
+                baseMileageDisplay.textContent = baseDistance.toFixed(0);
+                finalMileageDisplay.textContent = finalDistance.toFixed(0);
+
+                routeLayer.clearLayers();
+                const latlngs = [
+                    [departureAirport.lat, departureAirport.lon],
+                    [arrivalAirport.lat, arrivalAirport.lon]
+                ];
+                L.marker(latlngs[0]).addTo(routeLayer).bindPopup(`${departureAirport.city} (${departureAirport.iata})`).openPopup();
+                L.marker(latlngs[1]).addTo(routeLayer).bindPopup(`${arrivalAirport.city} (${arrivalAirport.iata})`);
+                L.polyline(latlngs, {color: 'blue'}).addTo(routeLayer);
+                map.fitBounds(latlngs, {padding: [50, 50]});
+
+            } else {
+                baseMileageDisplay.textContent = 'ー';
+                finalMileageDisplay.textContent = 'ー';
+            }
+        }
+    </script>
+</body>
+</html>
