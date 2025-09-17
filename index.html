@@ -56,6 +56,26 @@
                 height: 400px;
             }
         }
+                    /* Airport list custom styles */
+        .list-continent, .list-continent:not(.collapsed) {
+            background-color: lightblue !important;
+            color: black !important;
+        }
+        .list-country, .list-country:not(.collapsed) {
+            background-color: lightcyan !important;
+            color: black !important;
+        }
+        .list-airport {
+            background-color: white !important;
+            color: black !important;
+        }
+        /* Reset accordion icon color for light backgrounds */
+        .list-continent::after {
+            filter: none;
+        }
+        .list-country:not(.collapsed)::after {
+            filter: none;
+        }
     </style>
 </head>
 <body>
@@ -302,7 +322,7 @@
                 continentHeader.id = continentHeaderId;
 
                 const continentButton = document.createElement('button');
-                continentButton.className = 'accordion-button collapsed';
+                continentButton.className = 'accordion-button collapsed list-continent';
                 continentButton.type = 'button';
                 continentButton.dataset.bsToggle = 'collapse';
                 continentButton.dataset.bsTarget = `#${continentId}`;
@@ -338,7 +358,7 @@
                     countryHeader.id = countryHeaderId;
 
                     const countryButton = document.createElement('button');
-                    countryButton.className = 'accordion-button collapsed';
+                    countryButton.className = 'accordion-button collapsed list-country';
                     countryButton.type = 'button';
                     countryButton.dataset.bsToggle = 'collapse';
                     countryButton.dataset.bsTarget = `#${countryId}`;
@@ -365,7 +385,7 @@
                     for (const airport of airportsInCountry) {
                         const airportLink = document.createElement('a');
                         airportLink.href = '#';
-                        airportLink.className = 'list-group-item list-group-item-action';
+                        airportLink.className = 'list-group-item list-group-item-action list-airport';
                         airportLink.textContent = `${airport.city} (${airport.iata})`;
                         airportLink.dataset.iata = airport.iata;
                         listGroup.appendChild(airportLink);
