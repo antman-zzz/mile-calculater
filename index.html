@@ -161,7 +161,7 @@
             <div class="col-12 col-lg-4">
                 <div id="airport-list-card" class="card h-100">
                     <div class="card-header">
-                        <input type="text" id="airport-search-input" class="form-control" placeholder="空港を検索...">
+                        <input type="text" id="airport-search-input" class="form-control" placeholder="国・空港名を検索（英語）">
                     </div>
                     <div class="card-body">
                         <div class="accordion accordion-flush" id="airport-list">
@@ -308,7 +308,11 @@
                 return acc;
             }, {});
 
-            const continents = Object.keys(groupedFilteredAirports).sort();
+                        const continents = Object.keys(groupedFilteredAirports).sort((a, b) => {
+                if (a === '南極') return 1;
+                if (b === '南極') return -1;
+                return a.localeCompare(b);
+            });
 
             for (const continent of continents) {
                 const continentId = `continent-${continent.replace(/\s+/g, '-')}`;

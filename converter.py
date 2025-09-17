@@ -54,7 +54,7 @@ def main():
                         'iata': row[col_indices['iata_code']],
                         'name': row[col_indices['name']],
                         'city': row[col_indices['municipality']],
-                        'country': COUNTRY_NAME_JA_MAP.get(english_country_name, english_country_name),
+                        'country': english_country_name,
                         'continent': CONTINENT_MAP.get(row[col_indices['continent']], row[col_indices['continent']]),
                         'lat': float(row[col_indices['latitude_deg']]) if row[col_indices['latitude_deg']] else 0.0,
                         'lon': float(row[col_indices['longitude_deg']]) if row[col_indices['longitude_deg']] else 0.0
