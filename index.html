@@ -10,10 +10,10 @@
         body {
             background-color: #f8f9fa;
         }
-        .navbar {
-            position: sticky;
-            top: 0;
-            z-index: 1020;
+                .navbar {
+            /* position: sticky; */ /* Removed to make it not sticky */
+            /* top: 0; */ /* Removed */
+            z-index: 1020; /* Keep z-index in case other elements overlap */
         }
         .sticky-calculator {
             position: sticky;
@@ -76,6 +76,14 @@
         .list-country:not(.collapsed)::after {
             filter: none;
         }
+            @media (max-width: 991.98px) {
+            #airport-list-card .card-header {
+                position: sticky;
+                /* 56px (navbar) + approx 94px (calculator on mobile) */
+                top: 0; 
+                z-index: 1000;
+            }
+        }
     </style>
 </head>
 <body>
@@ -86,7 +94,13 @@
                 航空会社が発表するマイル数とは、必ずしも一致しません。
             </span>
         </div>
-    </nav>
+        </nav>
+
+    <div class="container-fluid bg-dark text-end py-1">
+        <span class="navbar-text text-light" style="font-size: 0.8em;">
+            航空会社が発表するマイル数とは、必ずしも一致しません。
+        </span>
+    </div>
 
     <div class="sticky-calculator">
         <div class="container">
