@@ -15,9 +15,9 @@
             /* top: 0; */ /* Removed */
             z-index: 1020; /* Keep z-index in case other elements overlap */
         }
-        .sticky-calculator {
+                .sticky-calculator {
             position: sticky;
-            top: 56px; /* Height of the navbar */
+            top: 0; /* Float at the very top */
             z-index: 1010;
             background-color: #ffffff;
             padding: 0.75rem 0;
@@ -90,9 +90,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
                         <a class="navbar-brand" href="#">空港間マイル計算</a>
-            <span class="navbar-text text-light" style="font-size: 0.8em;">
-                航空会社が発表するマイル数とは、必ずしも一致しません。
-            </span>
+            
         </div>
         </nav>
 
@@ -341,33 +339,40 @@
                     const isCapital = capitalAirports.has(airport.iata);
                     const markerOptions = isCapital ? capitalMarkerOptions : defaultMarkerOptions;
 
-                    const marker = L.circleMarker([airport.lat, airport.lon], markerOptions)
-                        .bindTooltip(`${airport.city} (${airport.iata})`)
-                        .on('click', () => {
-                            const iata = airport.iata;
-                            const isLgScreen = window.innerWidth >= 992;
+                                        const marker = L.circleMarker([airport.lat, airport.lon], markerOptions);
 
-                            const depSelect = isLgScreen ? departureSelectLg : departureSelectSm;
-                            const arrSelect = isLgScreen ? arrivalSelectLg : arrivalSelectSm;
+                    const popupContent = document.createElement('div');
+                    popupContent.innerHTML = `<strong>${airport.city} (${airport.iata})</strong><br>`;
 
-                            if (!depSelect.value) {
-                                depSelect.value = iata;
-                                lastSelectedField = 'departure';
-                            } else if (!arrSelect.value) {
-                                arrSelect.value = iata;
-                                lastSelectedField = 'arrival';
-                            } else {
-                                if (lastSelectedField === 'arrival') {
-                                    depSelect.value = iata;
-                                    lastSelectedField = 'departure';
-                                } else {
-                                    arrSelect.value = iata;
-                                    lastSelectedField = 'arrival';
-                                }
-                            }
-                            syncForms(depSelect);
-                            calculateMiles();
-                        });
+                    const depButton = document.createElement('button');
+                    depButton.className = 'btn btn-sm btn-primary me-1';
+                    depButton.textContent = '出発空港';
+                    depButton.onclick = function() {
+                        const iata = airport.iata;
+                        const isLgScreen = window.innerWidth >= 992;
+                        const depSelect = isLgScreen ? departureSelectLg : departureSelectSm;
+                        depSelect.value = iata;
+                        syncForms(depSelect);
+                        calculateMiles();
+                        map.closePopup();
+                    };
+                    popupContent.appendChild(depButton);
+
+                    const arrButton = document.createElement('button');
+                    arrButton.className = 'btn btn-sm btn-secondary';
+                    arrButton.textContent = '到着空港';
+                    arrButton.onclick = function() {
+                        const iata = airport.iata;
+                        const isLgScreen = window.innerWidth >= 992;
+                        const arrSelect = isLgScreen ? arrivalSelectLg : arrivalSelectSm;
+                        arrSelect.value = iata;
+                        syncForms(arrSelect);
+                        calculateMiles();
+                        map.closePopup();
+                    };
+                    popupContent.appendChild(arrButton);
+
+                    marker.bindPopup(popupContent);
                     marker.addTo(map);
                 }
             });
@@ -461,13 +466,45 @@
                     listGroup.className = 'list-group';
 
                     const airportsInCountry = groupedFilteredAirports[continent][country];
-                    for (const airport of airportsInCountry) {
-                        const airportLink = document.createElement('a');
-                        airportLink.href = '#';
-                        airportLink.className = 'list-group-item list-group-item-action list-airport';
-                        airportLink.textContent = `${airport.city} (${airport.iata})`;
-                        airportLink.dataset.iata = airport.iata;
-                        listGroup.appendChild(airportLink);
+                                        for (const airport of airportsInCountry) {
+                        const airportItemDiv = document.createElement('div');
+                        airportItemDiv.className = 'list-group-item list-group-item-action list-airport d-flex justify-content-between align-items-center';
+
+                        const airportNameSpan = document.createElement('span');
+                        airportNameSpan.textContent = `${airport.city} (${airport.iata})`;
+                        airportItemDiv.appendChild(airportNameSpan);
+
+                        const buttonGroupDiv = document.createElement('div');
+                        buttonGroupDiv.className = 'btn-group btn-group-sm';
+
+                        const depButton = document.createElement('button');
+                        depButton.className = 'btn btn-outline-primary';
+                        depButton.textContent = '出発空港';
+                        depButton.onclick = function() {
+                            const iata = airport.iata;
+                            const isLgScreen = window.innerWidth >= 992;
+                            const depSelect = isLgScreen ? departureSelectLg : departureSelectSm;
+                            depSelect.value = iata;
+                            syncForms(depSelect);
+                            calculateMiles();
+                        };
+                        buttonGroupDiv.appendChild(depButton);
+
+                        const arrButton = document.createElement('button');
+                        arrButton.className = 'btn btn-outline-secondary';
+                        arrButton.textContent = '到着空港';
+                        arrButton.onclick = function() {
+                            const iata = airport.iata;
+                            const isLgScreen = window.innerWidth >= 992;
+                            const arrSelect = isLgScreen ? arrivalSelectLg : arrivalSelectSm;
+                            arrSelect.value = iata;
+                            syncForms(arrSelect);
+                            calculateMiles();
+                        };
+                        buttonGroupDiv.appendChild(arrButton);
+
+                        airportItemDiv.appendChild(buttonGroupDiv);
+                        listGroup.appendChild(airportItemDiv);
                     }
                     countryBody.appendChild(listGroup);
                     countryCollapse.appendChild(countryBody);
